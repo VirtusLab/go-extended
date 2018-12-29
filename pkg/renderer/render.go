@@ -21,10 +21,15 @@ const (
 
 // Renderer allows for parameterised text template rendering
 type Renderer interface {
-	Delim(left, right string) Renderer
-	Functions(extraFunctions template.FuncMap) Renderer
-	Options(options ...string) Renderer
-	Parameters(parameters map[string]interface{}) Renderer
+	Parameters() map[string]interface{}
+	Options() []string
+	Delim() (string, string)
+	Functions() template.FuncMap
+
+	WithParameters(parameters map[string]interface{}) Renderer
+	WithOptions(options ...string) Renderer
+	WithDelim(left, right string) Renderer
+	WithFunctions(extraFunctions template.FuncMap) Renderer
 
 	Render(rawTemplate string) (string, error)
 	NamedRender(templateName, rawTemplate string) (string, error)
@@ -43,38 +48,57 @@ type renderer struct {
 
 // New creates a new renderer with the specified parameters and zero or more options
 func New() Renderer {
-	r := &renderer{
+	return &renderer{
 		parameters:     map[string]interface{}{},
 		options:        []string{MissingKeyErrorOption},
 		leftDelim:      LeftDelim,
 		rightDelim:     RightDelim,
 		extraFunctions: template.FuncMap{},
 	}
+}
+
+// Parameters returns current parameters
+func (r *renderer) Parameters() map[string]interface{} {
+	return r.parameters
+}
+
+// Options returns current options
+func (r *renderer) Options() []string {
+	return r.options
+}
+
+// Delim returns current delimiters
+func (r *renderer) Delim() (string, string) {
+	return r.leftDelim, r.rightDelim
+}
+
+// Functions returns current extra functions
+func (r *renderer) Functions() template.FuncMap {
+	return r.extraFunctions
+}
+
+// WithParameters mutates Renderer with new template parameters
+func (r *renderer) WithParameters(parameters map[string]interface{}) Renderer {
+	r.parameters = parameters
 	return r
 }
 
-// Delim mutates Renderer with new left and right delimiters
-func (r *renderer) Delim(left, right string) Renderer {
+// WithOptions mutates Renderer with new template functions
+func (r *renderer) WithOptions(options ...string) Renderer {
+	r.options = options
+	return r
+}
+
+// WithDelim mutates Renderer with new left and right delimiters
+func (r *renderer) WithDelim(left, right string) Renderer {
 	r.leftDelim = left
 	r.rightDelim = right
 	return r
 }
 
-// Functions mutates Renderer with new template functions
-func (r *renderer) Functions(extraFunctions template.FuncMap) Renderer {
+// WithFunctions mutates Renderer with new template functions
+func (r *renderer) WithFunctions(extraFunctions template.FuncMap) Renderer {
 	r.extraFunctions = extraFunctions
-	return r
-}
-
-// Options mutates Renderer with new template functions
-func (r *renderer) Options(options ...string) Renderer {
-	r.options = options
-	return r
-}
-
-// Parameters mutates Renderer with new template parameters
-func (r *renderer) Parameters(parameters map[string]interface{}) Renderer {
-	r.parameters = parameters
 	return r
 }
 
@@ -84,7 +108,7 @@ func (r renderer) Render(rawTemplate string) (string, error) {
 	return r.NamedRender("nameless", rawTemplate)
 }
 
-// NamedRender is the main rendering function, see also Render, Parameters and ExtraFunctions
+// NamedRender is the main rendering function, see also Render, WithParameters and Functions
 func (r *renderer) NamedRender(templateName, rawTemplate string) (string, error) {
 	err := r.Validate()
 	if err != nil {

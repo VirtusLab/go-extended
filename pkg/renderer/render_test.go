@@ -38,7 +38,7 @@ something:
 				"something": map[string]string{"nested": "val"},
 			}
 
-			result, err := New().Parameters(params).NamedRender(tt.name, input)
+			result, err := New().WithParameters(params).NamedRender(tt.name, input)
 
 			assert.NoError(t, err, tt.name)
 			assert.Equal(t, expected, result, tt.name)
