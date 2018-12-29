@@ -19,7 +19,7 @@ Things missing or not belonging in the standard go library
 
 **No external dependencies**, with two exceptions:
 - go standard library
-- test libraries
+- tests
 
 ## Installation
 #### Via Go

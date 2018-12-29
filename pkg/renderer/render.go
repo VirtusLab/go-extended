@@ -19,8 +19,21 @@ const (
 	RightDelim = "}}"
 )
 
-// Renderer structure holds parameters and options
-type Renderer struct {
+// Renderer allows for parameterised text template rendering
+type Renderer interface {
+	Delim(left, right string) Renderer
+	Functions(extraFunctions template.FuncMap) Renderer
+	Options(options ...string) Renderer
+	Parameters(parameters map[string]interface{}) Renderer
+
+	Render(rawTemplate string) (string, error)
+	NamedRender(templateName, rawTemplate string) (string, error)
+	Validate() error
+	Parse(templateName, rawTemplate string, extraFunctions template.FuncMap) (*template.Template, error)
+	Execute(t *template.Template) (string, error)
+}
+
+type renderer struct {
 	parameters     map[string]interface{}
 	options        []string
 	leftDelim      string
@@ -29,8 +42,8 @@ type Renderer struct {
 }
 
 // New creates a new renderer with the specified parameters and zero or more options
-func New() *Renderer {
-	r := &Renderer{
+func New() Renderer {
+	r := &renderer{
 		parameters:     map[string]interface{}{},
 		options:        []string{MissingKeyErrorOption},
 		leftDelim:      LeftDelim,
@@ -41,38 +54,38 @@ func New() *Renderer {
 }
 
 // Delim mutates Renderer with new left and right delimiters
-func (r *Renderer) Delim(left, right string) *Renderer {
+func (r *renderer) Delim(left, right string) Renderer {
 	r.leftDelim = left
 	r.rightDelim = right
 	return r
 }
 
 // Functions mutates Renderer with new template functions
-func (r *Renderer) Functions(extraFunctions template.FuncMap) *Renderer {
+func (r *renderer) Functions(extraFunctions template.FuncMap) Renderer {
 	r.extraFunctions = extraFunctions
 	return r
 }
 
 // Options mutates Renderer with new template functions
-func (r *Renderer) Options(options ...string) *Renderer {
+func (r *renderer) Options(options ...string) Renderer {
 	r.options = options
 	return r
 }
 
 // Parameters mutates Renderer with new template parameters
-func (r *Renderer) Parameters(parameters map[string]interface{}) *Renderer {
+func (r *renderer) Parameters(parameters map[string]interface{}) Renderer {
 	r.parameters = parameters
 	return r
 }
 
 // Render is a simple rendering function, also used as a custom template function
 // to allow in-template recursive rendering, see also NamedRender
-func (r *Renderer) Render(rawTemplate string) (string, error) {
+func (r renderer) Render(rawTemplate string) (string, error) {
 	return r.NamedRender("nameless", rawTemplate)
 }
 
 // NamedRender is the main rendering function, see also Render, Parameters and ExtraFunctions
-func (r *Renderer) NamedRender(templateName, rawTemplate string) (string, error) {
+func (r *renderer) NamedRender(templateName, rawTemplate string) (string, error) {
 	err := r.Validate()
 	if err != nil {
 		return "", err
@@ -89,7 +102,7 @@ func (r *Renderer) NamedRender(templateName, rawTemplate string) (string, error)
 }
 
 // Validate checks the internal state and returns error if necessary
-func (r *Renderer) Validate() error {
+func (r *renderer) Validate() error {
 	if r.parameters == nil {
 		return errors.New("unexpected 'nil' parameters")
 	}
@@ -114,7 +127,7 @@ func (r *Renderer) Validate() error {
 }
 
 // Parse is a basic template parsing function
-func (r *Renderer) Parse(templateName, rawTemplate string, extraFunctions template.FuncMap) (*template.Template, error) {
+func (r *renderer) Parse(templateName, rawTemplate string, extraFunctions template.FuncMap) (*template.Template, error) {
 	return template.New(templateName).
 		Delims(r.leftDelim, r.rightDelim).
 		Funcs(extraFunctions).
@@ -123,7 +136,7 @@ func (r *Renderer) Parse(templateName, rawTemplate string, extraFunctions templa
 }
 
 // Execute is a basic template execution function
-func (r *Renderer) Execute(t *template.Template) (string, error) {
+func (r *renderer) Execute(t *template.Template) (string, error) {
 	var buffer bytes.Buffer
 	err := t.Execute(&buffer, r.parameters)
 	if err != nil {
