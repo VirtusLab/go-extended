@@ -46,7 +46,7 @@ ARGS ?= $(EXTRA_ARGS)
 .DEFAULT_GOAL := help
 
 .PHONY: all
-all: clean dep verify build install ## Test, build, install
+all: clean dep verify ## Ensure deps, test, verify
 	@echo "+ $@"
 
 .PHONY: init
