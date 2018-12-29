@@ -21,15 +21,8 @@ const (
 
 // Renderer allows for parameterised text template rendering
 type Renderer interface {
-	Parameters() map[string]interface{}
-	Options() []string
-	Delim() (string, string)
-	Functions() template.FuncMap
-
-	WithParameters(parameters map[string]interface{}) Renderer
-	WithOptions(options ...string) Renderer
-	WithDelim(left, right string) Renderer
-	WithFunctions(extraFunctions template.FuncMap) Renderer
+	Configuration() Config
+	Reconfigure(configurators ...func(*Config))
 
 	Render(rawTemplate string) (string, error)
 	NamedRender(templateName, rawTemplate string) (string, error)
@@ -38,68 +31,74 @@ type Renderer interface {
 	Execute(t *template.Template) (string, error)
 }
 
+// Config holds the renderer configuration
+type Config struct {
+	Parameters     map[string]interface{}
+	Options        []string
+	LeftDelim      string
+	RightDelim     string
+	ExtraFunctions template.FuncMap
+}
+
 type renderer struct {
-	parameters     map[string]interface{}
-	options        []string
-	leftDelim      string
-	rightDelim     string
-	extraFunctions template.FuncMap
+	config *Config
 }
 
 // New creates a new renderer with the specified parameters and zero or more options
-func New() Renderer {
-	return &renderer{
-		parameters:     map[string]interface{}{},
-		options:        []string{MissingKeyErrorOption},
-		leftDelim:      LeftDelim,
-		rightDelim:     RightDelim,
-		extraFunctions: template.FuncMap{},
+func New(configurators ...func(*Config)) Renderer {
+	config := &Config{
+		Parameters:     map[string]interface{}{},
+		Options:        []string{MissingKeyErrorOption},
+		LeftDelim:      LeftDelim,
+		RightDelim:     RightDelim,
+		ExtraFunctions: template.FuncMap{},
+	}
+	r := &renderer{
+		config: config,
+	}
+	r.Reconfigure(configurators...)
+	return r
+}
+
+// Reconfigure mutates the configuration state with the given configurators
+func (r *renderer) Reconfigure(configurators ...func(*Config)) {
+	for _, c := range configurators {
+		c(r.config)
 	}
 }
 
-// Parameters returns current parameters
-func (r *renderer) Parameters() map[string]interface{} {
-	return r.parameters
+// Configuration returns current configuration
+func (r *renderer) Configuration() Config {
+	return *r.config
 }
 
-// Options returns current options
-func (r *renderer) Options() []string {
-	return r.options
+// WithParameters mutates Renderer configuration with new template parameters
+func WithParameters(parameters map[string]interface{}) func(*Config) {
+	return func(c *Config) {
+		c.Parameters = parameters
+	}
 }
 
-// Delim returns current delimiters
-func (r *renderer) Delim() (string, string) {
-	return r.leftDelim, r.rightDelim
+// WithOptions mutates Renderer configuration with new template functions
+func WithOptions(options ...string) func(*Config) {
+	return func(c *Config) {
+		c.Options = options
+	}
 }
 
-// Functions returns current extra functions
-func (r *renderer) Functions() template.FuncMap {
-	return r.extraFunctions
+// WithDelim mutates Renderer configuration with new left and right delimiters
+func WithDelim(left, right string) func(*Config) {
+	return func(c *Config) {
+		c.LeftDelim = left
+		c.RightDelim = right
+	}
 }
 
-// WithParameters mutates Renderer with new template parameters
-func (r *renderer) WithParameters(parameters map[string]interface{}) Renderer {
-	r.parameters = parameters
-	return r
-}
-
-// WithOptions mutates Renderer with new template functions
-func (r *renderer) WithOptions(options ...string) Renderer {
-	r.options = options
-	return r
-}
-
-// WithDelim mutates Renderer with new left and right delimiters
-func (r *renderer) WithDelim(left, right string) Renderer {
-	r.leftDelim = left
-	r.rightDelim = right
-	return r
-}
-
-// WithFunctions mutates Renderer with new template functions
-func (r *renderer) WithFunctions(extraFunctions template.FuncMap) Renderer {
-	r.extraFunctions = extraFunctions
-	return r
+// WithFunctions mutates Renderer configuration with new template functions
+func WithFunctions(extraFunctions template.FuncMap) func(*Config) {
+	return func(c *Config) {
+		c.ExtraFunctions = extraFunctions
+	}
 }
 
 // Render is a simple rendering function, also used as a custom template function
@@ -114,7 +113,7 @@ func (r *renderer) NamedRender(templateName, rawTemplate string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	t, err := r.Parse(templateName, rawTemplate, r.extraFunctions)
+	t, err := r.Parse(templateName, rawTemplate, r.config.ExtraFunctions)
 	if err != nil {
 		return "", err
 	}
@@ -127,18 +126,18 @@ func (r *renderer) NamedRender(templateName, rawTemplate string) (string, error)
 
 // Validate checks the internal state and returns error if necessary
 func (r *renderer) Validate() error {
-	if r.parameters == nil {
+	if r.config.Parameters == nil {
 		return errors.New("unexpected 'nil' parameters")
 	}
 
-	if len(r.leftDelim) == 0 {
+	if len(r.config.LeftDelim) == 0 {
 		return errors.New("unexpected empty leftDelim")
 	}
-	if len(r.rightDelim) == 0 {
+	if len(r.config.RightDelim) == 0 {
 		return errors.New("unexpected empty rightDelim")
 	}
 
-	for _, o := range r.options {
+	for _, o := range r.config.Options {
 		switch o {
 		case MissingKeyErrorOption:
 		case MissingKeyInvalidOption:
@@ -153,16 +152,16 @@ func (r *renderer) Validate() error {
 // Parse is a basic template parsing function
 func (r *renderer) Parse(templateName, rawTemplate string, extraFunctions template.FuncMap) (*template.Template, error) {
 	return template.New(templateName).
-		Delims(r.leftDelim, r.rightDelim).
+		Delims(r.config.LeftDelim, r.config.RightDelim).
 		Funcs(extraFunctions).
-		Option(r.options...).
+		Option(r.config.Options...).
 		Parse(rawTemplate)
 }
 
 // Execute is a basic template execution function
 func (r *renderer) Execute(t *template.Template) (string, error) {
 	var buffer bytes.Buffer
-	err := t.Execute(&buffer, r.parameters)
+	err := t.Execute(&buffer, r.config.Parameters)
 	if err != nil {
 		retErr := err
 		if e, ok := err.(template.ExecError); ok {
