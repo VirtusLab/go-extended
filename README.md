@@ -31,8 +31,13 @@ $ go get github.com/VirtusLab/go-extended
 ## Usage
 
 See [GoDoc Documentation](https://godoc.org/github.com/VirtusLab/go-extended/)
-and the tests, [e.g.](https://github.com/VirtusLab/render/blob/master/renderer/render_test.go) 
+and the tests, [e.g.](https://github.com/VirtusLab/go-extended/blob/master/pkg/renderer/render_test.go) 
 for usage examples.
+
+### Notable features
+
+- simple [`renderer`](https://godoc.org/github.com/VirtusLab/go-extended/pkg/renderer) that extends [`text/template`](https://golang.org/pkg/text/template/)
+- easy to use [`matcher`](https://godoc.org/github.com/VirtusLab/go-extended/pkg/matcher) that extends [`regexp`](https://golang.org/pkg/regexp/)
 
 ## Contribution
 
