@@ -4,25 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/VirtusLab/go-extended/pkg/renderer/config"
 	"strings"
 	"text/template"
 )
 
-const (
-	// MissingKeyInvalidOption is the renderer option to continue execution on missing key and print "<no value>"
-	MissingKeyInvalidOption = "missingkey=invalid"
-	// MissingKeyErrorOption is the renderer option to stops execution immediately with an error on missing key
-	MissingKeyErrorOption = "missingkey=error"
-	// LeftDelim is the default left template delimiter
-	LeftDelim = "{{"
-	// RightDelim is the default right template delimiter
-	RightDelim = "}}"
-)
-
 // Renderer allows for parameterised text template rendering
 type Renderer interface {
-	Configuration() Config
-	Reconfigure(configurators ...func(*Config))
+	Configuration() config.Config
+	Reconfigure(configurators ...func(*config.Config))
 
 	Render(rawTemplate string) (string, error)
 	NamedRender(templateName, rawTemplate string) (string, error)
@@ -31,72 +21,62 @@ type Renderer interface {
 	Execute(t *template.Template) (string, error)
 }
 
-// Config holds the renderer configuration
-type Config struct {
-	Parameters     map[string]interface{}
-	Options        []string
-	LeftDelim      string
-	RightDelim     string
-	ExtraFunctions template.FuncMap
-}
-
 type renderer struct {
-	config *Config
+	config *config.Config
 }
 
 // New creates a new renderer with the specified parameters and zero or more options
-func New(configurators ...func(*Config)) Renderer {
-	config := &Config{
-		Parameters:     map[string]interface{}{},
-		Options:        []string{MissingKeyErrorOption},
-		LeftDelim:      LeftDelim,
-		RightDelim:     RightDelim,
-		ExtraFunctions: template.FuncMap{},
-	}
+func New(configurators ...func(*config.Config)) Renderer {
 	r := &renderer{
-		config: config,
+		config: &config.Config{
+			Parameters:     map[string]interface{}{},
+			Options:        []string{config.MissingKeyErrorOption},
+			LeftDelim:      config.LeftDelim,
+			RightDelim:     config.RightDelim,
+			ExtraFunctions: template.FuncMap{},
+		},
 	}
 	r.Reconfigure(configurators...)
 	return r
 }
 
 // Reconfigure mutates the configuration state with the given configurators
-func (r *renderer) Reconfigure(configurators ...func(*Config)) {
+func (r *renderer) Reconfigure(configurators ...func(*config.Config)) {
 	for _, c := range configurators {
 		c(r.config)
 	}
 }
 
 // Configuration returns current configuration
-func (r *renderer) Configuration() Config {
+func (r *renderer) Configuration() config.Config {
 	return *r.config
 }
 
 // WithParameters mutates Renderer configuration with new template parameters
-func WithParameters(parameters map[string]interface{}) func(*Config) {
-	return func(c *Config) {
+func WithParameters(parameters map[string]interface{}) func(*config.Config) {
+	return func(c *config.Config) {
 		c.Parameters = parameters
 	}
 }
 
 // WithOptions mutates Renderer configuration with new template functions
-func WithOptions(options ...string) func(*Config) {
-	return func(c *Config) {
+func WithOptions(options ...string) func(*config.Config) {
+	return func(c *config.Config) {
 		c.Options = options
 	}
 }
 
 // WithDelim mutates Renderer configuration with new left and right delimiters
-func WithDelim(left, right string) func(*Config) {
-	return func(c *Config) {
+func WithDelim(left, right string) func(*config.Config) {
+	return func(c *config.Config) {
 		c.LeftDelim = left
 		c.RightDelim = right
 	}
 }
 
 // WithFunctions mutates Renderer configuration with new template functions
-func WithFunctions(extraFunctions template.FuncMap) func(*Config) {
-	return func(c *Config) {
+func WithFunctions(extraFunctions template.FuncMap) func(*config.Config) {
+	return func(c *config.Config) {
 		c.ExtraFunctions = extraFunctions
 	}
 }
@@ -139,11 +119,13 @@ func (r *renderer) Validate() error {
 
 	for _, o := range r.config.Options {
 		switch o {
-		case MissingKeyErrorOption:
-		case MissingKeyInvalidOption:
+		case config.MissingKeyErrorOption:
+		case config.MissingKeyInvalidOption:
 		default:
 			return fmt.Errorf("unexpected option: '%s', option must be in: '%s'",
-				o, strings.Join([]string{MissingKeyInvalidOption, MissingKeyErrorOption}, ", "))
+				o, strings.Join([]string{
+					config.MissingKeyInvalidOption, config.MissingKeyErrorOption,
+				}, ", "))
 		}
 	}
 	return nil
