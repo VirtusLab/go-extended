@@ -5,12 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/VirtusLab/go-extended "Go Report Card")](https://goreportcard.com/report/github.com/VirtusLab/go-extended)
 [![GoDoc](https://godoc.org/github.com/VirtusLab/go-extended?status.svg "GoDoc Documentation")](https://godoc.org/github.com/VirtusLab/go-extended/)
 
-Things missing or not belonging in the standard go library
-
-**No external dependencies**, with two exceptions:
-- go standard library
-- test libraries
-
+* [Goals](README.md#goals)
 * [Installation](README.md#installation)
   * [Via Go](README.md#via-go)
 * [Usage](README.md#usage)
@@ -18,6 +13,13 @@ Things missing or not belonging in the standard go library
 * [Development](README.md#development)
 * [The Name](README.md#the-name)
 
+## Goals
+
+Things missing or not belonging in the standard go library
+
+**No external dependencies**, with two exceptions:
+- go standard library
+- test libraries
 
 ## Installation
 #### Via Go
@@ -29,7 +31,7 @@ $ go get github.com/VirtusLab/go-extended
 ## Usage
 
 See [GoDoc Documentation](https://godoc.org/github.com/VirtusLab/go-extended/)
-and [tests](https://github.com/VirtusLab/render/blob/master/renderer/render_test.go) 
+and the tests, [e.g.](https://github.com/VirtusLab/render/blob/master/renderer/render_test.go) 
 for usage examples.
 
 ## Contribution
