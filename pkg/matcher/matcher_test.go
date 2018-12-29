@@ -7,81 +7,121 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMatcher_MatchGroups(t *testing.T) {
-	type entry struct {
-		value  string
-		wantOk bool
-		want   map[string]string
+func Test_matcher_MatchGroups(t *testing.T) {
+	type fields struct {
+		matcher Matcher
+	}
+	type args struct {
+		value string
 	}
 	type test struct {
-		name    string
-		expr    string
-		entries []entry
-		f       func(tc test)
+		name   string
+		fields fields
+		args   args
+		want   map[string]string
+		wantOk bool
+		f      func(tt test)
 	}
-
 	standard := func(tt test) {
-		m, err := New(tt.expr)
-		assert.NoError(t, err)
-		for _, e := range tt.entries {
-			actual, ok := m.MatchGroups(e.value)
-			assert.Equal(t, e.wantOk, ok, "test: '%s', entry: '%s'", tt.name, e.value)
-			assert.EqualValues(t, e.want, actual, "test: '%s', entry: '%s'", tt.name, e.value)
-		}
+		actual, ok := tt.fields.matcher.MatchGroups(tt.args.value)
+		assert.Equal(t, tt.wantOk, ok, "test: '%s', entry: '%s'", tt.name, tt.args.value)
+		assert.EqualValues(t, tt.want, actual, "test: '%s', entry: '%s'", tt.name, tt.args.value)
 	}
-
 	tests := []test{
 		{
 			name: "empty expression",
-			expr: ``,
-			entries: []entry{
-				{
-					value:  "",
-					wantOk: true,
-					want:   map[string]string{},
-				},
+			fields: fields{
+				matcher: Must(``),
 			},
-			f: standard,
-		}, {
+			args: args{
+				value: "",
+			},
+			want:   map[string]string{},
+			wantOk: true,
+			f:      standard,
+		},
+		{
 			name: "simple expression",
-			expr: `^(?P<name>\S+)=(?P<value>\S*)$`,
-			entries: []entry{
-				{
-					value:  "test=something",
-					wantOk: true,
-					want: map[string]string{
-						"name":  "test",
-						"value": "something",
-					},
-				},
+			fields: fields{
+				matcher: Must(`^(?P<name>\S+)=(?P<value>\S*)$`),
 			},
-			f: standard,
-		}, {
-			name: "git url expression",
-			expr: `^git@(?P<hostname>[\w\-\.]+):(?P<organisation>[\w\-]+)\/(?P<name>[\w\-]+)\.git$`,
-			entries: []entry{
-				{value: "", wantOk: false, want: map[string]string{}},
-				{value: "invalid", wantOk: false, want: map[string]string{}},
-				{value: "git@something.com:anorg/arepo", wantOk: false, want: map[string]string{}},
-				{value: "git@something.com:anorg/arepo.git", wantOk: true, want: map[string]string{
-					"hostname":     "something.com",
-					"organisation": "anorg",
-					"name":         "arepo",
-				}},
+			args: args{
+				value: "test=something",
 			},
-			f: standard,
-		}, {
+			want: map[string]string{
+				"name":  "test",
+				"value": "something",
+			},
+			wantOk: true,
+			f:      standard,
+		},
+		{
+			name: "git url expression - empty",
+			fields: fields{
+				matcher: Must(`^git@(?P<hostname>[\w\-\.]+):(?P<organisation>[\w\-]+)\/(?P<name>[\w\-]+)\.git$`),
+			},
+			args: args{
+				value: "",
+			},
+			want:   map[string]string{},
+			wantOk: false,
+			f:      standard,
+		},
+		{
+			name: "git url expression - invalid",
+			fields: fields{
+				matcher: Must(`^git@(?P<hostname>[\w\-\.]+):(?P<organisation>[\w\-]+)\/(?P<name>[\w\-]+)\.git$`),
+			},
+			args: args{
+				value: "invalid",
+			},
+			want:   map[string]string{},
+			wantOk: false,
+			f:      standard,
+		},
+		{
+			name: "git url expression - missing extension",
+			fields: fields{
+				matcher: Must(`^git@(?P<hostname>[\w\-\.]+):(?P<organisation>[\w\-]+)\/(?P<name>[\w\-]+)\.git$`),
+			},
+			args: args{
+				value: "git@something.com:anorg/arepo",
+			},
+			want:   map[string]string{},
+			wantOk: false,
+			f:      standard,
+		},
+		{
+			name: "git url expression - missing extension",
+			fields: fields{
+				matcher: Must(`^git@(?P<hostname>[\w\-\.]+):(?P<organisation>[\w\-]+)\/(?P<name>[\w\-]+)\.git$`),
+			},
+			args: args{
+				value: "git@something.com:anorg/arepo.git",
+			},
+			want: map[string]string{
+				"hostname":     "something.com",
+				"organisation": "anorg",
+				"name":         "arepo",
+			},
+			wantOk: true,
+			f:      standard,
+		},
+		{
 			name: "compile fail",
-			expr: "<?:[",
-			f: func(tc test) {
-				_, err := New(tc.expr)
-				assert.Error(t, err)
+			f: func(tt test) {
+				assert.PanicsWithValue(t,
+					"regexp: Compile(`<?:[`): error parsing regexp: missing closing ]: `[`",
+					func() {
+						Must(`<?:[`)
+					},
+				)
 			},
 		},
 	}
 
-	for i, tt := range tests {
-		t.Run(fmt.Sprintf("[%d] %s", i, tt.name), func(t *testing.T) { tt.f(tt) })
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) { tt.f(tt) })
 	}
 }
 
@@ -124,10 +164,10 @@ func Test_matcher_Match(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("[%d] %s", i, tt.name), func(t *testing.T) {
 			m := tt.fields.matcher
 			got := m.Match(tt.args.value)
-			assert.Equal(t, tt.want, got, "[%d] matcher.Match() = %v, want %v", i, got, tt.want)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }

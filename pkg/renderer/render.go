@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/VirtusLab/go-extended/pkg/renderer/config"
 	"strings"
 	"text/template"
+
+	"github.com/VirtusLab/go-extended/pkg/renderer/config"
 )
 
 // Renderer allows for parameterised text template rendering
