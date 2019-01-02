@@ -10,8 +10,7 @@ PATH  := $(GOPATH)/bin:$(PATH)
 PREFIX?=$(shell pwd)
 
 # Set the main.go path for go command
-#BUILD_PATH := ./cmd/$(NAME)
-BUILD_PATH := .
+BUILD_PATH := ./cmd/$(NAME)
 
 # Set any default go build tags
 BUILDTAGS :=
