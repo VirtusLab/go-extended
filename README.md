@@ -50,7 +50,7 @@ or [pull requests](https://github.com/VirtusLab/go-extended/pulls).
     export PATH=$PATH:$GOPATH/bin
     
     mkdir -p $GOPATH/src/github.com/VirtusLab
-    cd $GOPATH/src/github.com/VirtusLab/go-extended
+    cd $GOPATH/src/github.com/VirtusLab
     git clone git@github.com:VirtusLab/go-extended.git
     
     go get -u github.com/golang/dep/cmd/dep
