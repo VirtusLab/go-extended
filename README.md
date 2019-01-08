@@ -52,6 +52,7 @@ or [pull requests](https://github.com/VirtusLab/go-extended/pulls).
     mkdir -p $GOPATH/src/github.com/VirtusLab
     cd $GOPATH/src/github.com/VirtusLab
     git clone git@github.com:VirtusLab/go-extended.git
+    cd go-extended
     
     go get -u github.com/golang/dep/cmd/dep
     make all
