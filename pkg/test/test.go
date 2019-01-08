@@ -158,11 +158,13 @@ type Test struct {
 	More    []Test
 }
 
-// Run runs a test case with the standard test framework
+// Run runs all test case(s) with the standard test framework
 func Run(t *testing.T, tests ...Test) {
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("%d %s", i, tt.Name), func(t *testing.T) {
-			tt.Fn(tt)
+			if tt.Fn != nil {
+				tt.Fn(tt)
+			}
 			Run(t, tt.More...)
 		})
 	}
