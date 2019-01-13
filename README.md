@@ -1,6 +1,6 @@
 # go-extended
 
-[![Version](https://img.shields.io/badge/version-v0.0.1-brightgreen.svg)](https://github.com/VirtusLab/go-extended/releases/tag/v0.0.1)
+[![Version](https://img.shields.io/badge/version-v0.0.2-brightgreen.svg)](https://github.com/VirtusLab/go-extended/releases/tag/v0.0.2)
 [![Travis CI](https://img.shields.io/travis/VirtusLab/go-extended.svg)](https://travis-ci.org/VirtusLab/go-extended)
 [![Go Report Card](https://goreportcard.com/badge/github.com/VirtusLab/go-extended "Go Report Card")](https://goreportcard.com/report/github.com/VirtusLab/go-extended)
 [![GoDoc](https://godoc.org/github.com/VirtusLab/go-extended?status.svg "GoDoc Documentation")](https://godoc.org/github.com/VirtusLab/go-extended/)
