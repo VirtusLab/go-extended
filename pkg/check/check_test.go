@@ -1,10 +1,10 @@
 package check
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/VirtusLab/go-extended/pkg/test"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsValidJavaScriptIdentifier(t *testing.T) {
