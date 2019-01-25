@@ -49,6 +49,13 @@ func Sh(ctx context.Context, logger log.StdLogger, env []string, stdin *string, 
 		}
 	}()
 
+	if err = cmd.Start(); err != nil {
+		stdout = outb.String()
+		stderr = errb.String()
+		err = fmt.Errorf("error executing command: %+v", err)
+		return
+	}
+
 	// Make sure the child process ended
 	defer func() {
 		err := cmd.Process.Kill()
@@ -58,14 +65,7 @@ func Sh(ctx context.Context, logger log.StdLogger, env []string, stdin *string, 
 			}
 		}
 	}()
-
-	if err = cmd.Start(); err != nil {
-		stdout = outb.String()
-		stderr = errb.String()
-		err = fmt.Errorf("error executing command: %+v", err)
-		return
-	}
-
+	
 	if stdin != nil {
 		if _, err = io.WriteString(stdinPipe, *stdin); err != nil {
 			err = fmt.Errorf("error writing to stdin pipe: %+v", err)
