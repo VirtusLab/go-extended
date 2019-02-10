@@ -26,19 +26,23 @@ type renderer struct {
 	config *config.Config
 }
 
-// New creates a new renderer with the specified parameters and zero or more options
+// New creates a new default renderer with the specified parameters and zero or more options
 func New(configurators ...func(*config.Config)) Renderer {
-	r := &renderer{
-		config: &config.Config{
+	r := NewWithConfig(
+		config.Config{
 			Parameters:     map[string]interface{}{},
 			Options:        []string{config.MissingKeyErrorOption},
 			LeftDelim:      config.LeftDelim,
 			RightDelim:     config.RightDelim,
 			ExtraFunctions: template.FuncMap{},
-		},
-	}
+		})
 	r.Reconfigure(configurators...)
 	return r
+}
+
+// NewWithConfig creates a new custom renderer with the specified configuration
+func NewWithConfig(conf config.Config) Renderer {
+	return &renderer{config: &conf}
 }
 
 // Reconfigure mutates the configuration state with the given configurators

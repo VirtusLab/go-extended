@@ -65,7 +65,7 @@ func Sh(ctx context.Context, logger log.StdLogger, env []string, stdin *string, 
 			}
 		}
 	}()
-	
+
 	if stdin != nil {
 		if _, err = io.WriteString(stdinPipe, *stdin); err != nil {
 			err = fmt.Errorf("error writing to stdin pipe: %+v", err)
