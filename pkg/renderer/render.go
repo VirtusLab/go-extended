@@ -124,12 +124,13 @@ func (r *renderer) Validate() error {
 
 	for _, o := range r.config.Options {
 		switch o {
+		case config.MissingKeyZeroOption:
 		case config.MissingKeyErrorOption:
 		case config.MissingKeyInvalidOption:
 		default:
 			return fmt.Errorf("unexpected option: '%s', option must be in: '%s'",
 				o, strings.Join([]string{
-					config.MissingKeyInvalidOption, config.MissingKeyErrorOption,
+					config.MissingKeyInvalidOption, config.MissingKeyErrorOption, config.MissingKeyZeroOption,
 				}, ", "))
 		}
 	}
@@ -152,7 +153,12 @@ func (r *renderer) Execute(t *template.Template) (string, error) {
 	if err != nil {
 		retErr := err
 		if e, ok := err.(template.ExecError); ok {
-			retErr = fmt.Errorf("error (ExecError) evaluating the template named '%s': %s", e.Name, err)
+			var extra string
+			if strings.Contains(err.Error(), "map has no entry for key") {
+				extra = "; hint: go templates does not evaluate missing keys in dot notation, " +
+					"for more details see: https://github.com/VirtusLab/render/issues/11"
+			}
+			retErr = fmt.Errorf("error (ExecError) evaluating the template named '%s': %s%s", e.Name, err, extra)
 		}
 		return "", retErr
 	}

@@ -3,6 +3,7 @@ package renderer
 import (
 	"testing"
 
+	"github.com/VirtusLab/go-extended/pkg/renderer/config"
 	"github.com/VirtusLab/go-extended/pkg/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -68,4 +69,17 @@ func TestRenderer_Render(t *testing.T) {
 			},
 		},
 	)
+}
+
+func TestRenderer_ExecuteWithMissingKey(t *testing.T) {
+	t.Run("map has no entry for key", func(t *testing.T) {
+		input := `{{- if .keys.not.there }}{{- end }}`
+		expected := ""
+
+		result, err := New(WithOptions(config.MissingKeyErrorOption)).NamedRender("test", input)
+
+		assert.Error(t, err)
+		assert.Equal(t, expected, result)
+		assert.Contains(t, err.Error(), "map has no entry for key")
+	})
 }
