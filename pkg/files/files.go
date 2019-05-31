@@ -2,16 +2,25 @@ package files
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
 	// ErrExpectedStdin indicates that an stdin pipe was expected but not present
 	ErrExpectedStdin = errors.New("expected a pipe stdin")
 )
+
+// FileEntry contains file information
+type FileEntry struct {
+	Path      string
+	Name      string
+	Extension string
+}
 
 // ReadInput reads bytes from inputPath (if not empty) or stdin
 func ReadInput(inputPath string) ([]byte, error) {
@@ -90,4 +99,40 @@ func Pwd() (string, error) {
 		return "", err
 	}
 	return dir, nil
+}
+
+// DirTree returns files form all directories and subdirectories
+func DirTree(input string) (entries []FileEntry, err error) {
+	err = filepath.Walk(input, func(path string, info os.FileInfo, dirErr error) error {
+		if dirErr != nil {
+			return fmt.Errorf("error '%v' on path '%s'", dirErr, path)
+		}
+
+		if !info.IsDir() {
+			entry := FileEntry{
+				Path:      filepath.Dir(path),
+				Name:      info.Name(),
+				Extension: filepath.Ext(path),
+			}
+			entries = append(entries, entry)
+		}
+		return nil
+	})
+	if err != nil {
+		return entries, fmt.Errorf("can't walk the directory tree '%s': %s", input, err)
+	}
+
+	return entries, nil
+}
+
+// TrimExtension returns file without given extensions
+func TrimExtension(file FileEntry, extensions []string) (new FileEntry) {
+	new = file
+	for _, ext := range extensions {
+		if file.Extension == ext {
+			new.Name = strings.TrimSuffix(file.Name, ext)
+			new.Extension = filepath.Ext(new.Name)
+		}
+	}
+	return
 }
