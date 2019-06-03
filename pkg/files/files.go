@@ -1,6 +1,7 @@
 package files
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -44,6 +45,9 @@ func ReadInput(inputPath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// golang adds a new line at the end of every line, not what we want here
+	// note that we need to make sure the workaround is cross platform
+	fileContent = bytes.TrimRight(fileContent, "\r\n")
 	return fileContent, nil
 }
 
