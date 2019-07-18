@@ -2,6 +2,7 @@
 vendor
 
 # Binaries for programs and plugins
+go-extended
 *.exe
 *.exe~
 *.dll

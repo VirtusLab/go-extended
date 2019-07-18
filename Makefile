@@ -168,6 +168,7 @@ clean: ## Cleanup any build binaries or packages
 	$(RM) test$(NAME) || echo "Couldn't delete, not there."
 	$(RM) -r $(BUILDDIR) || echo "Couldn't delete, not there."
 	$(RM) coverage.txt || echo "Couldn't delete, not there."
+	rm -rf fork/client-go || echo "Couldn't delete, not there."
 
 .PHONY: spring-clean
 spring-clean: ## Cleanup git ignored files (interactive)
@@ -219,13 +220,14 @@ endif
 
 .PHONY: fork-jsonpath
 fork-jsonpath: ## Downloads util/jsonpath from kubernetes/client-go
-	rm -rf fork/client-go || "Missing directory, ignoring"
+	rm -rf fork/client-go || echo "Couldn't delete, not there."
 	git clone \
  		--depth 1 \
   		--no-checkout \
   		https://github.com/kubernetes/client-go.git fork/client-go; \
 	cd fork/client-go; \
-	git checkout master -- util/jsonpath/
+	git checkout master -- util/jsonpath; \
+	git checkout master -- third_party/forked/golang/template
 
 .PHONY: help
 help:

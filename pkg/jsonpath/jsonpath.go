@@ -23,9 +23,10 @@ import (
 	"reflect"
 	"strings"
 
-	"k8s.io/client-go/third_party/forked/golang/template"
+	"github.com/VirtusLab/go-extended/pkg/jsonpath/template"
 )
 
+// JSONPath represents the expression to evaluate
 type JSONPath struct {
 	name       string
 	parser     *Parser
@@ -76,6 +77,7 @@ func (j *JSONPath) Execute(wr io.Writer, data interface{}) error {
 	return nil
 }
 
+// FindResults searches recursively the data evaluating the path expression
 func (j *JSONPath) FindResults(data interface{}) ([][]reflect.Value, error) {
 	if j.parser == nil {
 		return nil, fmt.Errorf("%s is an incomplete jsonpath template", j.name)

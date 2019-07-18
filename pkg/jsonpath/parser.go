@@ -33,6 +33,7 @@ const (
 	rightDelim = "}"
 )
 
+// Parser represents the JSONPath flavour syntax parser
 type Parser struct {
 	Name  string
 	Root  *ListNode
@@ -44,12 +45,13 @@ type Parser struct {
 }
 
 var (
+	// ErrSyntax is used to indicate a syntax error while evaluating the expression
 	ErrSyntax        = errors.New("invalid syntax")
 	dictKeyRex       = regexp.MustCompile(`^'([^']*)'$`)
 	sliceOperatorRex = regexp.MustCompile(`^(-?[\d]*)(:-?[\d]*)?(:-?[\d]*)?$`)
 )
 
-// Parse parsed the given text and return a node Parser.
+// Parse parses the given text and return a node Parser.
 // If an error is encountered, parsing stops and an empty
 // Parser is returned with the error
 func Parse(name, text string) (*Parser, error) {
@@ -61,6 +63,7 @@ func Parse(name, text string) (*Parser, error) {
 	return p, err
 }
 
+// NewParser creates a new Parser
 func NewParser(name string) *Parser {
 	return &Parser{
 		Name: name,
@@ -78,6 +81,7 @@ func parseAction(name, text string) (*Parser, error) {
 	return p, nil
 }
 
+// Parse parses the given text
 func (p *Parser) Parse(text string) error {
 	p.input = text
 	p.Root = newList()

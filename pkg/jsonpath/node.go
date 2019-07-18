@@ -31,20 +31,33 @@ func (t NodeType) String() string {
 }
 
 const (
+	// NodeText is a text node type code
 	NodeText NodeType = iota
+	// NodeArray is an array node type code
 	NodeArray
+	// NodeList is a list node type code
 	NodeList
+	// NodeField is a field node type code
 	NodeField
+	// NodeIdentifier is an identifier node type code
 	NodeIdentifier
+	// NodeFilter is a filter node type code
 	NodeFilter
+	// NodeInt is an integer node type code
 	NodeInt
+	// NodeFloat is a float node type code
 	NodeFloat
+	// NodeWildcard is a wildcard node type code
 	NodeWildcard
+	// NodeRecursive is a recursive node type code
 	NodeRecursive
+	// NodeUnion is a union node type code
 	NodeUnion
+	// NodeBool is a boolean node type code
 	NodeBool
 )
 
+// NodeTypeName maps node type code to node type text representation
 var NodeTypeName = map[NodeType]string{
 	NodeText:       "NodeText",
 	NodeArray:      "NodeArray",
@@ -60,6 +73,7 @@ var NodeTypeName = map[NodeType]string{
 	NodeBool:       "NodeBool",
 }
 
+// Node represents a parse tree node
 type Node interface {
 	Type() NodeType
 	String() string
