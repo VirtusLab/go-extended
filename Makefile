@@ -193,10 +193,6 @@ tag: ## Create a new git tag to prepare to build a release
 	git tag -a $(VERSION) -m "$(VERSION)"
 	git push origin $(VERSION)
 
-.PHONY: help
-help:
-	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
 .PHONY: checkmake
 checkmake: ## Check this Makefile
 	@echo "+ $@"
@@ -220,3 +216,17 @@ endif
 	@echo "Dependencies:"
 	@dep status
 	@echo
+
+.PHONY: fork-jsonpath
+fork-jsonpath: ## Downloads util/jsonpath from kubernetes/client-go
+	rm -rf fork/client-go || "Missing directory, ignoring"
+	git clone \
+ 		--depth 1 \
+  		--no-checkout \
+  		https://github.com/kubernetes/client-go.git fork/client-go; \
+	cd fork/client-go; \
+	git checkout master -- util/jsonpath/
+
+.PHONY: help
+help:
+	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
