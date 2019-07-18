@@ -2,19 +2,41 @@ package files
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/VirtusLab/go-extended/pkg/errors"
 )
 
-var (
-	// ErrExpectedStdin indicates that an stdin pipe was expected but not present
-	ErrExpectedStdin = errors.New("expected a pipe stdin")
-)
+// ErrExpectedStdin indicates that an stdin pipe was expected but not present
+type ErrExpectedStdin struct {
+	stack *errors.Stack
+}
+
+func (e *ErrExpectedStdin) Error() string {
+	return "expected a pipe stdin"
+}
+
+// Format implements fmt.Formatter used by Sprint(f) or Fprint(f) etc.
+func (e *ErrExpectedStdin) Format(s fmt.State, verb rune) {
+	errors.FormatCauseAndStack(e, e.stack, s, verb)
+}
+
+// StackTrace returns a stack trace for this error
+func (e *ErrExpectedStdin) StackTrace() errors.StackTrace {
+	return e.stack.StackTrace()
+}
+
+// NewErrExpectedStdin creates a new ErrExpectedStdin
+func NewErrExpectedStdin() *ErrExpectedStdin {
+	return &ErrExpectedStdin{
+		stack: errors.Callers(),
+	}
+}
 
 // FileEntry contains file information
 type FileEntry struct {
@@ -24,17 +46,17 @@ type FileEntry struct {
 }
 
 // ReadInput reads bytes from inputPath (if not empty) or stdin
-func ReadInput(inputPath string) ([]byte, error) {
+func ReadInput(path string) ([]byte, error) {
 	var inputFile *os.File
-	if inputPath == "" {
+	if path == "" {
 		stdinFileInfo, _ := os.Stdin.Stat()
 		if (stdinFileInfo.Mode() & os.ModeNamedPipe) != 0 {
 			inputFile = os.Stdin
 		} else {
-			return nil, ErrExpectedStdin
+			return nil, NewErrExpectedStdin()
 		}
 	} else {
-		f, err := os.Open(inputPath)
+		f, err := os.Open(path)
 		if err != nil {
 			return nil, err
 		}
@@ -45,26 +67,30 @@ func ReadInput(inputPath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// golang adds a new line at the end of every line, not what we want here
+	// golang adds a new line characters at the end of every line, not what we want here
 	// note that we need to make sure the workaround is cross platform
 	fileContent = bytes.TrimRight(fileContent, "\r\n")
 	return fileContent, nil
 }
 
 // WriteOutput writes given bytes into outputPath (if not empty) or stdout
-func WriteOutput(outputPath string, outputContent []byte, perm os.FileMode) error {
-	if outputPath == "" {
-		count, err := os.Stdout.Write(outputContent)
-		if err == nil && count < len(outputContent) {
+func WriteOutput(path string, contents []byte, perm os.FileMode) error {
+	if path == "" {
+		count, err := os.Stdout.Write(contents)
+		if err == nil && count < len(contents) {
 			return io.ErrShortWrite
 		}
 		if err != nil {
 			return err
 		}
 	} else {
-		err := ioutil.WriteFile(outputPath, outputContent, perm)
+		_, err := MkDir(filepath.Dir(path), perm)
 		if err != nil {
 			return err
+		}
+		err = ioutil.WriteFile(path, contents, perm)
+		if err != nil {
+			return errors.Wrapf(err, "can't write file: '%s'", path)
 		}
 	}
 	return nil
@@ -109,7 +135,7 @@ func Pwd() (string, error) {
 func DirTree(input string) (entries []FileEntry, err error) {
 	err = filepath.Walk(input, func(path string, info os.FileInfo, dirErr error) error {
 		if dirErr != nil {
-			return fmt.Errorf("error '%v' on path '%s'", dirErr, path)
+			return errors.Errorf("error '%v' on path '%s'", dirErr, path)
 		}
 
 		if !info.IsDir() {
@@ -123,10 +149,29 @@ func DirTree(input string) (entries []FileEntry, err error) {
 		return nil
 	})
 	if err != nil {
-		return entries, fmt.Errorf("can't walk the directory tree '%s': %s", input, err)
+		return entries, errors.Errorf("can't walk the directory tree '%s': %s", input, err)
 	}
 
 	return entries, nil
+}
+
+// MkDir ensures a directory by the given path exists
+func MkDir(path string, permissions os.FileMode) (created bool, err error) {
+	_, err = os.Stat(path)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(path, permissions)
+		if err != nil {
+			return false, errors.Wrapf(err, "can't create the target directory: '%s'", path)
+		}
+	} else if os.IsExist(err) {
+		err := os.Chmod(path, permissions)
+		if err != nil {
+			return false, errors.Wrapf(err, "can't chmod the target directory: '%s'", path)
+		}
+	} else if err != nil {
+		return false, errors.Wrapf(err, "can't get file information for '%s'", path)
+	}
+	return true, nil
 }
 
 // TrimExtension returns file without given extensions
