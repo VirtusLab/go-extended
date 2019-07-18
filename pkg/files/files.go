@@ -84,7 +84,7 @@ func WriteOutput(path string, contents []byte, perm os.FileMode) error {
 			return err
 		}
 	} else {
-		_, err := MkDir(filepath.Dir(path), perm)
+		err := os.MkdirAll(filepath.Dir(path), 0755)
 		if err != nil {
 			return err
 		}
@@ -153,25 +153,6 @@ func DirTree(input string) (entries []FileEntry, err error) {
 	}
 
 	return entries, nil
-}
-
-// MkDir ensures a directory by the given path exists
-func MkDir(path string, permissions os.FileMode) (created bool, err error) {
-	_, err = os.Stat(path)
-	if os.IsNotExist(err) {
-		err := os.MkdirAll(path, permissions)
-		if err != nil {
-			return false, errors.Wrapf(err, "can't create the target directory: '%s'", path)
-		}
-	} else if os.IsExist(err) {
-		err := os.Chmod(path, permissions)
-		if err != nil {
-			return false, errors.Wrapf(err, "can't chmod the target directory: '%s'", path)
-		}
-	} else if err != nil {
-		return false, errors.Wrapf(err, "can't get file information for '%s'", path)
-	}
-	return true, nil
 }
 
 // TrimExtension returns file without given extensions
