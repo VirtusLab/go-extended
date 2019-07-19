@@ -164,11 +164,12 @@ cover: ## Runs go test with coverage
 clean: ## Cleanup any build binaries or packages
 	@echo "+ $@"
 	go clean
-	$(RM) $(NAME) || echo "Couldn't delete, not there."
-	$(RM) test$(NAME) || echo "Couldn't delete, not there."
-	$(RM) -r $(BUILDDIR) || echo "Couldn't delete, not there."
-	$(RM) coverage.txt || echo "Couldn't delete, not there."
-	rm -rf fork/client-go || echo "Couldn't delete, not there."
+	$(RM) $(NAME) || echo "Couldn't delete, ignoring."
+	$(RM) test$(NAME) || echo "Couldn't delete, ignoring."
+	$(RM) -r $(BUILDDIR) || echo "Couldn't delete, ignoring."
+	$(RM) coverage.txt || echo "Couldn't delete, ignoring."
+	rm -rf fork/client-go || echo "Couldn't delete, ignoring."
+	rmdir fork || echo "Couldn't delete, ignoring."
 
 .PHONY: spring-clean
 spring-clean: ## Cleanup git ignored files (interactive)
@@ -220,7 +221,7 @@ endif
 
 .PHONY: fork-jsonpath
 fork-jsonpath: ## Downloads util/jsonpath from kubernetes/client-go
-	rm -rf fork/client-go || echo "Couldn't delete, not there."
+	rm -rf fork/client-go || echo "Couldn't delete, ignoring."
 	git clone \
  		--depth 1 \
   		--no-checkout \
