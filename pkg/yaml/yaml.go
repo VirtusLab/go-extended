@@ -1,8 +1,9 @@
 package yaml
 
 import (
-	"gopkg.in/yaml.v3"
 	"io"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ToInterface unmarshalls YAML reader to a "generic" interface
@@ -15,13 +16,13 @@ func ToInterface(reader io.Reader) (interface{}, error) {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return []interface{}{}, err
+			return map[string]interface{}{}, err
 		}
 		values = append(values, value)
 	}
 	var result interface{}
 	if len(values) == 0 {
-		// empty
+		result = map[string]interface{}{}
 	} else if len(values) == 1 {
 		result = values[0].(map[string]interface{})
 	} else {

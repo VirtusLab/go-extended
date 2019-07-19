@@ -17,5 +17,8 @@ func ToInterface(reader io.Reader) (interface{}, error) {
 			return nil, err
 		}
 	}
+	if result == nil {
+		return map[string]interface{}{}, nil
+	}
 	return result, nil
 }

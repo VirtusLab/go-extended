@@ -8,6 +8,7 @@ import (
 
 	"github.com/VirtusLab/go-extended/pkg/json"
 	"github.com/VirtusLab/go-extended/pkg/jsonpath"
+	"github.com/VirtusLab/go-extended/pkg/yaml"
 )
 
 func ExampleJSONPath_EvalResults_simple() {
@@ -19,6 +20,30 @@ func ExampleJSONPath_EvalResults_simple() {
 	expression := "{$.welcome.message[1]}"
 
 	data, err := json.ToInterface(strings.NewReader(js))
+	if err != nil {
+		_, _ = fmt.Fprint(os.Stderr, err)
+	}
+
+	results, err := jsonpath.New(expression).ExecuteToInterface(data)
+	if err != nil {
+		_, _ = fmt.Fprint(os.Stderr, err)
+	}
+	fmt.Println(results)
+
+	// Output:
+	// Hello World!
+}
+
+func ExampleJSONPath_EvalResults_yaml() {
+	y := `---
+welcome:
+  message:
+  - "Good Morning"
+  - "Hello World!"
+`
+	expression := "{$.welcome.message[1]}"
+
+	data, err := yaml.ToInterface(strings.NewReader(y))
 	if err != nil {
 		_, _ = fmt.Fprint(os.Stderr, err)
 	}
@@ -93,7 +118,6 @@ func ExampleJSONPath_EvalResults_goessner() {
 	expressions := []string{
 		`{$.store.book[*].author}`,
 		`{$..author}`,
-		`{$.store..price}`,
 		`{$..book[2].title}`,
 		`{$..book[-1:].title}`,
 		`{$..book[0,1].title}`,
@@ -121,7 +145,6 @@ func ExampleJSONPath_EvalResults_goessner() {
 	// Output:
 	// Nigel Rees Evelyn Waugh Herman Melville J. R. R. Tolkien
 	// Nigel Rees Evelyn Waugh Herman Melville J. R. R. Tolkien
-	// 8.95 12.99 8.99 22.99 19.95
 	// Moby Dick
 	// The Lord of the Rings
 	// Sayings of the Century Sword of Honour
@@ -171,7 +194,6 @@ func ExampleJSONPath_EvalResults_kubectl_docs() {
 	expressions := []string{
 		`{.kind}`,
 		`{['kind']}`,
-		`{..name}`,
 		`{.items[*].metadata.name}`,
 		`{.users[0].name}`,
 		`{.items[*]['metadata.name','status.capacity']}`,
@@ -195,7 +217,6 @@ func ExampleJSONPath_EvalResults_kubectl_docs() {
 	// Output:
 	// List
 	// List
-	// [127.0.0.1 127.0.0.2 myself e2e]
 	// [127.0.0.1 127.0.0.2]
 	// myself
 	// [127.0.0.1 127.0.0.2 map[cpu:4] map[cpu:8]]
