@@ -25,9 +25,20 @@
   revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
   version = "v1.3.0"
 
+[[projects]]
+  branch = "v3"
+  digest = "1:46754188622566b86271d7526cb643b88c2b9589ee224c2d55e282f0f35a0df8"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "674ba3eaed223079f9377fbb0c98c0951bf6ec10"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["github.com/stretchr/testify/assert"]
+  input-imports = [
+    "github.com/stretchr/testify/assert",
+    "gopkg.in/yaml.v3",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
