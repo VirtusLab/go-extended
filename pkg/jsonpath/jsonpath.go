@@ -28,6 +28,7 @@ import (
 
 // JSONPath represents the expression to evaluate
 type JSONPath struct {
+	expr       string
 	name       string
 	parser     *Parser
 	stack      [][]reflect.Value // push and pop values in different scopes
@@ -40,9 +41,10 @@ type JSONPath struct {
 }
 
 // New creates a new JSONPath with the given name.
-func New(name string) *JSONPath {
+func New(expression string) *JSONPath {
 	return &JSONPath{
-		name:       name,
+		expr:       expression,
+		name:       "jsonpath",
 		beginRange: 0,
 		inRange:    0,
 		endRange:   0,
@@ -56,15 +58,19 @@ func (j *JSONPath) AllowMissingKeys(allow bool) *JSONPath {
 	return j
 }
 
-// Parse parses the given template and returns an error.
-func (j *JSONPath) Parse(text string) error {
+// Parse parses the given expression or returns an error
+func (j *JSONPath) Parse() error {
 	var err error
-	j.parser, err = Parse(j.name, text)
+	j.parser, err = Parse(j.name, j.expr)
 	return err
 }
 
 // Execute bounds data into template and writes the result.
 func (j *JSONPath) Execute(wr io.Writer, data interface{}) error {
+	err := j.Parse()
+	if err != nil {
+		return err
+	}
 	fullResults, err := j.FindResults(data)
 	if err != nil {
 		return err
@@ -85,7 +91,7 @@ func (j *JSONPath) FindResults(data interface{}) ([][]reflect.Value, error) {
 
 	j.cur = []reflect.Value{reflect.ValueOf(data)}
 	nodes := j.parser.Root.Nodes
-	fullResult := [][]reflect.Value{}
+	var fullResult [][]reflect.Value
 	for i := 0; i < len(nodes); i++ {
 		node := nodes[i]
 		results, err := j.walk(j.cur, node)
@@ -123,7 +129,7 @@ func (j *JSONPath) FindResults(data interface{}) ([][]reflect.Value, error) {
 // PrintResults writes the results into writer
 func (j *JSONPath) PrintResults(wr io.Writer, results []reflect.Value) error {
 	for i, r := range results {
-		text, err := j.evalToText(r)
+		text, err := j.EvalToText(r)
 		if err != nil {
 			return err
 		}
@@ -211,7 +217,7 @@ func (j *JSONPath) evalList(value []reflect.Value, node *ListNode) ([]reflect.Va
 
 // evalIdentifier evaluates IdentifierNode
 func (j *JSONPath) evalIdentifier(input []reflect.Value, node *IdentifierNode) ([]reflect.Value, error) {
-	results := []reflect.Value{}
+	var results []reflect.Value
 	switch node.Name {
 	case "range":
 		j.stack = append(j.stack, j.cur)
@@ -236,7 +242,7 @@ func (j *JSONPath) evalIdentifier(input []reflect.Value, node *IdentifierNode) (
 
 // evalArray evaluates ArrayNode
 func (j *JSONPath) evalArray(input []reflect.Value, node *ArrayNode) ([]reflect.Value, error) {
-	result := []reflect.Value{}
+	var result []reflect.Value
 	for _, value := range input {
 
 		value, isNil := template.Indirect(value)
@@ -293,7 +299,7 @@ func (j *JSONPath) evalArray(input []reflect.Value, node *ArrayNode) ([]reflect.
 
 // evalUnion evaluates UnionNode
 func (j *JSONPath) evalUnion(input []reflect.Value, node *UnionNode) ([]reflect.Value, error) {
-	result := []reflect.Value{}
+	var result []reflect.Value
 	for _, listNode := range node.Nodes {
 		temp, err := j.evalList(input, listNode)
 		if err != nil {
@@ -339,7 +345,7 @@ func (j *JSONPath) findFieldInValue(value *reflect.Value, node *FieldNode) (refl
 
 // evalField evaluates field of struct or key of map.
 func (j *JSONPath) evalField(input []reflect.Value, node *FieldNode) ([]reflect.Value, error) {
-	results := []reflect.Value{}
+	var results []reflect.Value
 	// If there's no input, there's no output
 	if len(input) == 0 {
 		return results, nil
@@ -380,7 +386,7 @@ func (j *JSONPath) evalField(input []reflect.Value, node *FieldNode) ([]reflect.
 
 // evalWildcard extracts all contents of the given value
 func (j *JSONPath) evalWildcard(input []reflect.Value, node *WildcardNode) ([]reflect.Value, error) {
-	results := []reflect.Value{}
+	var results []reflect.Value
 	for _, value := range input {
 		value, isNil := template.Indirect(value)
 		if isNil {
@@ -407,9 +413,9 @@ func (j *JSONPath) evalWildcard(input []reflect.Value, node *WildcardNode) ([]re
 
 // evalRecursive visits the given value recursively and pushes all of them to result
 func (j *JSONPath) evalRecursive(input []reflect.Value, node *RecursiveNode) ([]reflect.Value, error) {
-	result := []reflect.Value{}
+	var result []reflect.Value
 	for _, value := range input {
-		results := []reflect.Value{}
+		var results []reflect.Value
 		value, isNil := template.Indirect(value)
 		if isNil {
 			continue
@@ -443,7 +449,7 @@ func (j *JSONPath) evalRecursive(input []reflect.Value, node *RecursiveNode) ([]
 
 // evalFilter filters array according to FilterNode
 func (j *JSONPath) evalFilter(input []reflect.Value, node *FilterNode) ([]reflect.Value, error) {
-	results := []reflect.Value{}
+	var results []reflect.Value
 	for _, value := range input {
 		value, _ = template.Indirect(value)
 
@@ -515,13 +521,66 @@ func (j *JSONPath) evalFilter(input []reflect.Value, node *FilterNode) ([]reflec
 	return results, nil
 }
 
-// evalToText translates reflect value to corresponding text
-func (j *JSONPath) evalToText(v reflect.Value) ([]byte, error) {
+// EvalToText translates reflect value to corresponding text
+func (j *JSONPath) EvalToText(v reflect.Value) ([]byte, error) {
 	iface, ok := template.PrintableValue(v)
 	if !ok {
 		return nil, fmt.Errorf("can't print type %s", v.Type())
 	}
 	var buffer bytes.Buffer
-	fmt.Fprint(&buffer, iface)
+	_, _ = fmt.Fprint(&buffer, iface)
 	return buffer.Bytes(), nil
+}
+
+// EvalResults writes the results into a slice of interfaces
+func (j *JSONPath) EvalResults(results []reflect.Value) ([]interface{}, error) {
+	var evaluated []interface{}
+	for _, r := range results {
+		iface, err := j.EvalToInterface(r)
+		if err != nil {
+			return evaluated, err
+		}
+		evaluated = append(evaluated, iface)
+	}
+	return evaluated, nil
+}
+
+// EvalToInterface translates reflect value to corresponding text
+func (*JSONPath) EvalToInterface(v reflect.Value) (interface{}, error) {
+	iface, ok := template.PrintableValue(v)
+	if !ok {
+		return "", fmt.Errorf("can't evaluate type %s to interface{}", v.Type())
+	}
+	return iface, nil
+}
+
+// ExecuteToInterface bounds data into template and returns the result.
+func (j *JSONPath) ExecuteToInterface(data interface{}) (interface{}, error) {
+	err := j.Parse()
+	if err != nil {
+		return "", err
+	}
+	results, err := j.FindResults(data)
+	if err != nil {
+		return "", err
+	}
+	var rs []interface{}
+	for _, result := range results {
+		for _, value := range result {
+			text, err := j.EvalToInterface(value)
+			if err != nil {
+				return "", err
+			}
+			rs = append(rs, text)
+		}
+	}
+	var final interface{}
+	if len(rs) == 0 {
+		final = ""
+	} else if len(rs) == 1 {
+		final = rs[0]
+	} else {
+		final = rs
+	}
+	return final, nil
 }

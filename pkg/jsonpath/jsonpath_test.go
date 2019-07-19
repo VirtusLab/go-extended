@@ -36,9 +36,9 @@ type jsonpathTest struct {
 
 func testJSONPath(tests []jsonpathTest, allowMissingKeys bool, t *testing.T) {
 	for _, test := range tests {
-		j := New(test.name)
+		j := New(test.template)
 		j.AllowMissingKeys(allowMissingKeys)
-		err := j.Parse(test.template)
+		err := j.Parse()
 		if err != nil {
 			if !test.expectError {
 				t.Errorf("in %s, parse %s error %v", test.name, test.template, err)
@@ -65,8 +65,8 @@ func testJSONPath(tests []jsonpathTest, allowMissingKeys bool, t *testing.T) {
 // testJSONPathSortOutput test cases related to map, the results may print in random order
 func testJSONPathSortOutput(tests []jsonpathTest, t *testing.T) {
 	for _, test := range tests {
-		j := New(test.name)
-		err := j.Parse(test.template)
+		j := New(test.template)
+		err := j.Parse()
 		if err != nil {
 			t.Errorf("in %s, parse %s error %v", test.name, test.template, err)
 		}
@@ -89,8 +89,8 @@ func testJSONPathSortOutput(tests []jsonpathTest, t *testing.T) {
 
 func testFailJSONPath(tests []jsonpathTest, t *testing.T) {
 	for _, test := range tests {
-		j := New(test.name)
-		err := j.Parse(test.template)
+		j := New(test.template)
+		err := j.Parse()
 		if err != nil {
 			t.Errorf("in %s, parse %s error %v", test.name, test.template, err)
 		}

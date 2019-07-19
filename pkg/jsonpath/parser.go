@@ -38,7 +38,6 @@ type Parser struct {
 	Name  string
 	Root  *ListNode
 	input string
-	cur   *ListNode
 	pos   int
 	start int
 	width int
@@ -187,10 +186,10 @@ func (p *Parser) parseInsideAction(cur *ListNode) error {
 }
 
 // parseRightDelim scans the right delimiter, which is known to be present.
-func (p *Parser) parseRightDelim(cur *ListNode) error {
+func (p *Parser) parseRightDelim(_ *ListNode) error {
 	p.pos += len(rightDelim)
 	p.consumeText()
-	cur = p.Root
+	cur := p.Root
 	return p.parseText(cur)
 }
 
@@ -235,6 +234,7 @@ func (p *Parser) parseRecursive(cur *ListNode) error {
 func (p *Parser) parseNumber(cur *ListNode) error {
 	r := p.peek()
 	if r == '+' || r == '-' {
+		//lint:ignore SA4006 not harmful, leave as-is to make fork sync easier
 		r = p.next()
 	}
 	for {
@@ -278,7 +278,7 @@ Loop:
 	//union operator
 	strs := strings.Split(text, ",")
 	if len(strs) > 1 {
-		union := []*ListNode{}
+		var union []*ListNode
 		for _, str := range strs {
 			parser, err := parseAction("union", fmt.Sprintf("[%s]", strings.Trim(str, " ")))
 			if err != nil {
@@ -355,6 +355,7 @@ Loop:
 		case eof, '\n':
 			return fmt.Errorf("unterminated filter")
 		case '"', '\'':
+			//lint:ignore S1002 not harmful, leave as-is to make fork sync easier
 			if begin == false {
 				//save the paired rune
 				begin = true

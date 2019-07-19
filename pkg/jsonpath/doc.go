@@ -18,4 +18,6 @@ limitations under the License.
 // which can be seen at http://goessner.net/articles/JsonPath/.
 // In addition, it has {range} {end} function to iterate list and slice.
 // This package is copied from repo kubernetes/client-go.
+// See:
+// https://kubernetes.io/docs/reference/kubectl/jsonpath/
 package jsonpath
