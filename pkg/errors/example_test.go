@@ -206,6 +206,7 @@ func Example_stackTrace() {
 func ExampleCause_printf() {
 	err := errors.Wrapf(func() error {
 		return func() error {
+			//lint:ignore S1039 the test introduces it on purpose
 			return errors.Errorf("hello %s", fmt.Sprintf("world"))
 		}()
 	}(), "failed")

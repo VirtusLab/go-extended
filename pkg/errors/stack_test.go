@@ -168,15 +168,16 @@ func TestStackTrace(t *testing.T) {
 	}, {
 		Cause(func() error {
 			return func() error {
+				//lint:ignore S1039 the test introduces it on purpose
 				return Wrapf(New("hello %s"), fmt.Sprintf("world"))
 			}()
 		}()), []string{
 			`github.com/VirtusLab/go-extended/pkg/errors.TestStackTrace.func2.1` +
-				"\n\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:171", // this is the stack of Errorf
+				"\n\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:172", // this is the stack of Errorf
 			`github.com/VirtusLab/go-extended/pkg/errors.TestStackTrace.func2` +
-				"\n\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:172", // this is the stack of Errorf's caller
+				"\n\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:173", // this is the stack of Errorf's caller
 			"github.com/VirtusLab/go-extended/pkg/errors.TestStackTrace\n" +
-				"\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:173", // this is the stack of Errorf's caller's caller
+				"\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:174", // this is the stack of Errorf's caller's caller
 		},
 	}}
 	for i, tt := range tests {
@@ -246,19 +247,19 @@ func TestStackTraceFormat(t *testing.T) {
 	}, {
 		stackTrace()[:2],
 		"%v",
-		`\[stack_test.go:200 stack_test.go:247\]`,
+		`\[stack_test.go:201 stack_test.go:248\]`,
 	}, {
 		stackTrace()[:2],
 		"%+v",
 		"\n" +
 			"github.com/VirtusLab/go-extended/pkg/errors.stackTrace\n" +
-			"\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:200\n" +
+			"\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:201\n" +
 			"github.com/VirtusLab/go-extended/pkg/errors.TestStackTraceFormat\n" +
-			"\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:251",
+			"\t.+/github.com/VirtusLab/go-extended/pkg/errors/stack_test.go:252",
 	}, {
 		stackTrace()[:2],
 		"%#v",
-		`\[\]errors.Frame{stack_test.go:200, stack_test.go:259}`,
+		`\[\]errors.Frame{stack_test.go:201, stack_test.go:260}`,
 	}}
 
 	for i, tt := range tests {
